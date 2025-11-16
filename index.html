@@ -1,0 +1,161 @@
+<!--
+    This file displays a PNG image that is stored as a binary string.
+    It converts the binary data to bytes, then to base64, and finally displays it as an image.
+    The conversion process:
+    1. Binary string -> Uint8Array (bytes)
+    2. Bytes -> Base64 string
+    3. Base64 -> Data URL for image display
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#209ce9">
+    <meta name="description" content="NanoVM: convert Nano addresses and binary data using Nano amount decimals">
+    <title>nanoVM · publicserver.live</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico">
+</head>
+<body>
+    <div class="container nano-container">
+        <div class="nano-header">
+            <img src="logo.png" alt="Nano Assets logo" class="nano-logo">
+            <h1>nanoVM<span class="cursor">█</span></h1>
+            <p class="nano-subtitle">by <a href="https://publicserver.live">publicserver.live</a></p>
+            <p class="nano-subtitle">Encode messages, code and images into Nano on-chain amounts.</p>
+            <a href="https://github.com/publicserverlive/nanovm">https://github.com/publicserverlive/nanovm </a>
+        </div>
+
+        <div class="nano-layout">
+            <div class="nano-main">
+                <section class="nano-section">
+                    <h2>Message (≤ 500 chars)</h2>
+                    <label class="nano-label" for="messagePlain">Plaintext message</label>
+                    <textarea
+                        id="messagePlain"
+                        class="nano-textarea"
+                        maxlength="500"
+                        placeholder="Type a message (up to 500 characters)"
+                    ></textarea>
+                    <button class="nano-button" onclick="encodeMessageToNano()">Encode message</button>
+                    <button class="nano-button secondary" onclick="clearField('messagePlain')">Clear</button>
+                    <div id="messageError" class="error"></div>
+
+                    <label class="nano-label" for="messageAmountsOutput">Encoded Message</label>
+                    <textarea
+                        id="messageAmountsOutput"
+                        class="nano-textarea"
+                        readonly
+                        spellcheck="false"
+                        placeholder="Encoded Nano amounts will appear here, one per line"
+                    ></textarea>
+                    <button class="nano-button secondary" onclick="copyFrom('messageAmountsOutput')">Copy</button>
+
+                    <label class="nano-label" for="messageAmountsInput">Decode from Nano amounts</label>
+                    <textarea
+                        id="messageAmountsInput"
+                        class="nano-textarea"
+                        spellcheck="false"
+                        placeholder="Paste Nano amounts here, one per line"
+                    ></textarea>
+                    <button class="nano-button" onclick="decodeMessageFromNano()">Decode message</button>
+                    <button class="nano-button secondary" onclick="clearField('messageAmountsInput')">Clear</button>
+                    <label class="nano-label" for="messageDecodedOutput">Decoded message</label>
+                    <textarea
+                        id="messageDecodedOutput"
+                        class="nano-textarea"
+                        readonly
+                        spellcheck="false"
+                        placeholder="Decoded message will appear here"
+                    ></textarea>
+                </section>
+
+                <section class="nano-section">
+                    <h2>PNG ↔ Nano amounts (≤ 50 KB)</h2>
+                    <label class="nano-label" for="pngFileInput">PNG or JPG file</label>
+                    <input type="file" accept=".png,.jpg,.jpeg" id="pngFileInput" class="nano-input-file">
+                    <div id="imageError" class="error"></div>
+
+                    <button class="nano-button" onclick="encodeImageToNano()">Encode image to Nano amounts</button>
+
+                    <label class="nano-label" for="imageAmountsOutput">Encoded Nano amounts</label>
+                    <textarea
+                        id="imageAmountsOutput"
+                        class="nano-textarea"
+                        readonly
+                        spellcheck="false"
+                        placeholder="Encoded Nano amounts for this PNG will appear here, one per line"
+                    ></textarea>
+                    <button class="nano-button secondary" onclick="copyFrom('imageAmountsOutput')">Copy</button>
+
+                    <label class="nano-label" for="imageAmountsInput">Decode from Nano amounts</label>
+                    <textarea
+                        id="imageAmountsInput"
+                        class="nano-textarea"
+                        spellcheck="false"
+                        placeholder="Paste Nano amounts here, one per line"
+                    ></textarea>
+                    <button class="nano-button" onclick="decodeImageFromNano()">Decode to image</button>
+                    <button class="nano-button secondary" onclick="clearField('imageAmountsInput')">Clear</button>
+
+                    <div class="preview-container">
+                        <img id="binaryImage" alt="Decoded image">
+                        <div id="error" class="error"></div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="nano-side">
+                <section class="nano-section">
+                    <h2>Example: encoded program  movement</h2>
+                    <p class="nano-subtitle" style="margin-top: 0; font-size: 0.85em;">Use the arrows to build a stack of <code>L</code>, <code>R</code>, <code>U</code> and <code>D</code> commands, encode it into Nano amounts, then run the encoded program to move the character.</p>
+
+                    <label class="nano-label" for="programStack">Program stack (commands)</label>
+                    <div class="nano-program-controls nano-program-controls-grid">
+                        <button class="nano-button secondary nano-arrow nano-arrow-up" onclick="appendProgramCommand('U')">&uarr; add U</button>
+                        <button class="nano-button secondary nano-arrow nano-arrow-left" onclick="appendProgramCommand('L')">&larr; add L</button>
+                        <button class="nano-button secondary nano-arrow nano-arrow-right" onclick="appendProgramCommand('R')">&rarr; add R</button>
+                        <button class="nano-button secondary nano-arrow nano-arrow-down" onclick="appendProgramCommand('D')">&darr; add D</button>
+                    </div>
+                    <textarea
+                        id="programStack"
+                        class="nano-textarea"
+                        spellcheck="false"
+                        placeholder="Each line should contain a command such as L or R"
+                    ></textarea>
+                    <button class="nano-button" onclick="encodeProgramToNano()">Encode program</button>
+                    <button class="nano-button secondary" onclick="clearField('programStack')">Clear</button>
+                    <div id="programError" class="error"></div>
+
+                    <label class="nano-label" for="programAmountsOutput">Program Nano amounts</label>
+                    <textarea
+                        id="programAmountsOutput"
+                        class="nano-textarea"
+                        readonly
+                        spellcheck="false"
+                        placeholder="Encoded Nano amounts for this program will appear here, one per line"
+                    ></textarea>
+                    <button class="nano-button" onclick="runProgramFromNano()">Run prover </button>
+
+                    <div class="runner-container">
+                        <div class="runner-object"></div>
+                        <div class="runner-object"></div>
+                        <div class="runner-object"></div>
+                        <div class="runner-object"></div>
+                        <div id="runner" class="runner">@</div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section class="nano-section nano-footer">
+            <p class="nano-subtitle">Thank you for reading! If you find this interesting, please consider supporting my work on Nano:</p>
+            <code>nano_1i5kzrcodkab1rcrzu4scasd5zatkyixtcwmg49re5b95tihnkrxgd3tjah7</code>
+        </section>
+    </div>
+
+    <script src="converter.js"></script>
+
+</body>
+</html>
